@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>转账</title>
+
+    <style>
+        input {
+            cursor: pointer;
+            -webkit-appearance: none;
+            background-color: #fff;
+            background-image: none;
+            border-radius: 4px;
+            border: 1px solid #dcdfe6;
+            box-sizing: border-box;
+            color: #606266;
+            display: inline-block;
+            font-size: inherit;
+            height: 40px;
+            line-height: 40px;
+            outline: none;
+            padding: 0 15px;
+            transition: border-color .2s cubic-bezier(.645,.045,.355,1);
+            width: 100%;
+        }
+        button {
+            color: #fff;
+            background-color: #409eff;
+            border-color: #409eff;
+            display: inline-block;
+            line-height: 1;
+            white-space: nowrap;
+            cursor: pointer;
+            border-top-color: rgb(220, 223, 230);
+            border-right-color: rgb(220, 223, 230);
+            border-bottom-color: rgb(220, 223, 230);
+            border-left-color: rgb(220, 223, 230);
+            -webkit-appearance: none;
+            text-align: center;
+            box-sizing: border-box;
+            outline: none;
+            margin: 0;
+            transition: .1s;
+            font-weight: 500;
+            -moz-user-select: none;
+            -webkit-user-select: none;
+            -ms-user-select: none;
+            padding: 12px 20px;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        .form-item {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="form-item">
+    <label for="token">合约地址</label><input id="token" value="" />
+</div>
+
+<div class="form-item">
+    <label for="toAddress">接收者地址</label><input id="toAddress" value="" />
+</div>
+
+<div class="form-item">
+    <label for="amount">数量</label><input id="amount" value="" />
+</div>
+
+<button onclick="sub()">发送</button>
+
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+
+<script>
+
+    const ERC20Abi = [
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "value",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Approval",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "indexed": true,
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "value",
+                    "type": "uint256"
+                }
+            ],
+            "name": "Transfer",
+            "type": "event"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "owner",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                }
+            ],
+            "name": "allowance",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "spender",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "approve",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "account",
+                    "type": "address"
+                }
+            ],
+            "name": "balanceOf",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "totalSupply",
+            "outputs": [
+                {
+                    "internalType": "uint256",
+                    "name": "",
+                    "type": "uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transfer",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "address",
+                    "name": "from",
+                    "type": "address"
+                },
+                {
+                    "internalType": "address",
+                    "name": "to",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transferFrom",
+            "outputs": [
+                {
+                    "internalType": "bool",
+                    "name": "",
+                    "type": "bool"
+                }
+            ],
+            "stateMutability": "nonpayable",
+            "type": "function"
+        }
+    ]
+
+    async function sub() {
+
+        const token = document.getElementById("token").value
+        const toAddress = document.getElementById("toAddress").value
+        const amount = document.getElementById("amount").value
+
+        console.log(token)
+        console.log(toAddress)
+        console.log(amount)
+
+        const provider = window.ethereum
+        const web3 = new Web3(provider);
+
+        const contract = new web3.eth.Contract(ERC20Abi, token)
+
+        const accounts = await web3.eth.getAccounts()
+
+        await contract.methods.transfer(toAddress, amount).send({from: accounts[0]})
+
+        alert("转账成功")
+    }
+
+</script>
+
+</html>
